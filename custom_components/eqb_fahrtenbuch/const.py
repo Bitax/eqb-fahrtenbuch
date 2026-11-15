@@ -1,7 +1,7 @@
 """Konstanten für das EQB Fahrtenbuch."""
 
 DOMAIN = "eqb_fahrtenbuch"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 SOURCE_DOMAIN = "mbapi2020"  # MercedesMe2020-Integration
 

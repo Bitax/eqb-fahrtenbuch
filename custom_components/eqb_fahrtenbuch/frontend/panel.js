@@ -138,6 +138,14 @@ tr.cur td{background:#0d1a20}
 .ov{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px}
 .hero{grid-row:span 2;background:linear-gradient(160deg,#1c1f23 0%,#0e0f11 60%,#000 100%);position:relative;overflow:hidden}
 .hero .soc{font-family:"EQB Serif",Georgia,serif;font-size:72px;line-height:1;letter-spacing:-1px}
+.carwrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:220px;margin:14px 0 8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.carwrap img{max-width:100%;max-height:184px;object-fit:contain;filter:drop-shadow(0 22px 18px rgba(0,0,0,.75));animation:carIn .35s ease}
+.carwrap::before{content:"";position:absolute;bottom:26px;left:12%;right:12%;height:22px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,173,239,.18),transparent)}
+.cardots{display:flex;gap:6px;margin-top:12px}
+.cardots i{width:6px;height:6px;border-radius:3px;background:#3a3a3a;transition:width .2s}
+.cardots i.on{width:18px;background:var(--blue)}
+@keyframes carIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.carwrap img{animation:none}}
 .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:16px}
 .mini>div{background:#111;padding:10px 12px}
 .mini .lbl{font-size:10px;letter-spacing:1px}
@@ -174,6 +182,7 @@ tr.cur td{background:#0d1a20}
 .pin.car{border-color:var(--blue);background:#fff;width:18px;height:18px}
 @media (max-width:1100px){.ov{grid-template-columns:1fr 1fr}.hero{grid-column:span 2;grid-row:auto}.side{width:340px}}
 @media (max-width:820px){
+ .carwrap{height:180px}.carwrap img{max-height:148px}
  .top{padding:0 14px}.menu{display:block}.title h1{font-size:21px}
  .toprow{min-height:56px;gap:10px}
  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#0b0b0b;border-top:1px solid var(--line);margin:0;gap:0;justify-content:space-around;padding-bottom:env(safe-area-inset-bottom);height:auto}
@@ -469,7 +478,10 @@ class EqbFahrtenbuchPanel extends HTMLElement {
               <text x="62" y="78" text-anchor="middle" fill="#fff" font-size="20">${fmt(maxSoc, 0)} %</text>
             </svg>
           </div>
-          ${CAR_SVG}
+          <div class="carwrap" data-a="carview" title="Antippen für eine andere Ansicht">
+            <img src="${this.base}/img/${CAR_VIEWS[this.s.carView || 0]}.png?v=2" alt="Mercedes EQB">
+            <div class="cardots">${CAR_VIEWS.map((_, i) => `<i class="${i === (this.s.carView || 0) ? "on" : ""}"></i>`).join("")}</div>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${lockTxt ? `<span class="pill ${/verriegelt/i.test(lockTxt) && !/ent/i.test(lockTxt) ? "ok" : "warnp"}"><ha-icon icon="mdi:lock-outline"></ha-icon>${esc(lockTxt)}</span>` : ""}
             <span class="pill ${charging ? "blue" : ""}"><ha-icon icon="${charging ? "mdi:battery-charging" : "mdi:power-plug-off-outline"}"></ha-icon>${charging ? "Lädt" : "Lädt nicht"}</span>
@@ -1048,6 +1060,10 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     e.stopPropagation();
     const go = () => this.render();
     switch (a) {
+      case "carview":
+        this.s.carView = ((this.s.carView || 0) + 1) % CAR_VIEWS.length;
+        go();
+        break;
       case "menu":
         this.dispatchEvent(new Event("hass-toggle-menu", { bubbles: true, composed: true }));
         break;
@@ -1321,15 +1337,6 @@ class EqbFahrtenbuchPanel extends HTMLElement {
   }
 }
 
-const CAR_SVG = `<svg viewBox="0 0 440 150" width="100%" style="margin:16px 0 12px;max-height:170px" aria-hidden="true">
-  <defs><linearGradient id="eqbBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ecef"/><stop offset=".55" stop-color="#b9c0c7"/><stop offset="1" stop-color="#7d858d"/></linearGradient></defs>
-  <ellipse cx="220" cy="136" rx="190" ry="8" fill="#000" opacity=".6"/>
-  <path d="M34 112 L36 82 Q38 70 52 66 L104 58 L146 28 Q154 22 170 22 L318 22 Q336 22 346 32 L376 62 L396 68 Q408 72 408 86 L408 112 Z" fill="url(#eqbBody)"/>
-  <path d="M156 32 L232 32 L232 60 L124 60 Z M240 32 L316 32 Q328 32 334 40 L352 60 L240 60 Z" fill="#14171a"/>
-  <path d="M36 92 L408 92" stroke="#5d656c" stroke-width="1.5"/>
-  <rect x="392" y="74" width="16" height="6" rx="3" fill="#fff"/><rect x="34" y="76" width="12" height="6" rx="2" fill="#e0262b"/>
-  <circle cx="110" cy="114" r="26" fill="#0b0c0e"/><circle cx="110" cy="114" r="15" fill="#4a5056"/><circle cx="110" cy="114" r="5" fill="#0b0c0e"/>
-  <circle cx="332" cy="114" r="26" fill="#0b0c0e"/><circle cx="332" cy="114" r="15" fill="#4a5056"/><circle cx="332" cy="114" r="5" fill="#0b0c0e"/>
-</svg>`;
+const CAR_VIEWS = ["eqb_seite", "eqb_front", "eqb_heck"];
 
 customElements.define("eqb-fahrtenbuch-panel", EqbFahrtenbuchPanel);
