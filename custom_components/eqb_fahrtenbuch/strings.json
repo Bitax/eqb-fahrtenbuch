@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Fahrtenbuch einrichten",
+        "description": "Wähle das Auto aus der MercedesMe2020-Integration.",
+        "data": {
+          "vin": "Fahrzeug",
+          "battery_capacity": "Nutzbare Akkukapazität (kWh)",
+          "default_price": "Standard-Strompreis €/kWh (bis der erste Preis eingetragen ist)"
+        }
+      }
+    },
+    "abort": {
+      "no_mercedes": "Kein Fahrzeug der MercedesMe2020-Integration gefunden. Richte zuerst MercedesMe2020 ein.",
+      "already_configured": "Dieses Fahrzeug hat schon ein Fahrtenbuch."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fahrtenbuch-Einstellungen",
+        "data": {
+          "battery_capacity": "Nutzbare Akkukapazität (kWh)",
+          "default_price": "Standard-Strompreis €/kWh"
+        }
+      }
+    }
+  }
+}

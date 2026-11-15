@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up logbook",
+        "description": "Pick the car from the MercedesMe2020 integration.",
+        "data": {
+          "vin": "Vehicle",
+          "battery_capacity": "Usable battery capacity (kWh)",
+          "default_price": "Default price €/kWh"
+        }
+      }
+    },
+    "abort": {
+      "no_mercedes": "No MercedesMe2020 vehicle found. Set up MercedesMe2020 first.",
+      "already_configured": "This vehicle already has a logbook."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Logbook settings",
+        "data": {
+          "battery_capacity": "Usable battery capacity (kWh)",
+          "default_price": "Default price €/kWh"
+        }
+      }
+    }
+  }
+}
