@@ -241,6 +241,15 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     this._narrow = n;
   }
 
+  // Home Assistant übergibt die aktuelle Adresse als „route“. Eigene Funktionen
+  // dürfen deshalb nicht so heißen, sonst werden sie überschrieben.
+  set route(r) {
+    this._haRoute = r;
+  }
+  get route() {
+    return this._haRoute;
+  }
+
   set hass(h) {
     const first = !this._hass;
     this._hass = h;
@@ -470,7 +479,7 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     if (c.price !== null && c.price !== undefined && c.kwh) return Number(c.price) * Number(c.kwh);
     return null;
   }
-  route(t) {
+  _routeText(t) {
     return `${esc(t.start_name || "Unbekannter Ort")} <span class="muted">→</span> ${esc(t.end_name || "Unbekannter Ort")}`;
   }
   inMonth(item, y, m) {
@@ -593,7 +602,7 @@ class EqbFahrtenbuchPanel extends HTMLElement {
           <div class="lbl">Letzte Fahrt</div>
           ${
             last
-              ? `<div style="margin-top:8px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${this.route(last)}</div>
+              ? `<div style="margin-top:8px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${this._routeText(last)}</div>
                  <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px"><span class="big" style="margin:0">${fmt(last.km, 1)} km</span><span class="muted">${fmt(last.kwh, 1)} kWh</span></div>
                  <div class="row" style="margin-top:6px"><span class="muted">${WD_SHORT[new Date(last.start).getDay()]} ${dm(new Date(last.start))} · ${hm(new Date(last.start))}</span><b>${fmt(last.cons_100, 1)} kWh/100 km</b></div>
                  <div class="row"><span class="muted">Kosten</span><b class="blue">${eur(this.tripCost(last))}</b></div>
@@ -691,7 +700,7 @@ class EqbFahrtenbuchPanel extends HTMLElement {
       }
       rows += `<div class="trip ${this.s.sel === t.id ? "sel" : ""}" data-a="opentrip" data-v="${t.id}">
         <div class="t">${hm(s)}<br>${hm(e)}</div>
-        <div class="r"><b>${this.route(t)}</b><span>${dur(t.minutes)}${t.avg_speed ? " · Ø " + fmt(t.avg_speed, 0) + " km/h" : ""}</span></div>
+        <div class="r"><b>${this._routeText(t)}</b><span>${dur(t.minutes)}${t.avg_speed ? " · Ø " + fmt(t.avg_speed, 0) + " km/h" : ""}</span></div>
         <div class="km">${fmt(t.km, 1)} km</div><div class="kwh">${fmt(t.kwh, 1)} kWh</div>
         <button class="det" data-a="opentrip" data-v="${t.id}" aria-label="Statistik dieser Fahrt"><ha-icon icon="mdi:chart-bar"></ha-icon></button></div>`;
     }
@@ -711,7 +720,7 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     return `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
         <div><div class="lbl">Fahrt · ${WD_SHORT[s.getDay()]} ${dm(s)}${s.getFullYear()} · ${hm(s)}–${hm(new Date(t.end))}</div>
-        <div class="serif" style="font-size:23px;margin-top:6px;line-height:1.25">${this.route(t)}</div></div>
+        <div class="serif" style="font-size:23px;margin-top:6px;line-height:1.25">${this._routeText(t)}</div></div>
         <button class="btn ibtn" data-a="closetrip" aria-label="Schließen"><ha-icon icon="mdi:close"></ha-icon></button>
       </div>
       <div class="map" data-map="trip" data-id="${t.id}" style="height:${sheet ? 240 : 200}px"></div>
