@@ -57,10 +57,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data[entry.entry_id] = manager
 
     if not data.get("_registered"):
-        await _register_frontend(hass)
+        await _register_static(hass)
         async_register_websocket(hass)
         hass.http.register_view(FahrtenbuchPdfView(hass))
         data["_registered"] = True
+    await _register_frontend(hass)
 
     entry.async_on_unload(entry.add_update_listener(_reload))
     return True
@@ -74,12 +75,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     manager: FahrtenbuchManager | None = hass.data[DOMAIN].pop(entry.entry_id, None)
     if manager:
         await manager.async_stop()
+    # Kein Fahrtenbuch mehr eingerichtet: Eintrag aus der Seitenleiste entfernen
+    if not any(not k.startswith("_") for k in hass.data[DOMAIN]) and PANEL_URL in hass.data.get(frontend.DATA_PANELS, {}):
+        frontend.async_remove_panel(hass, PANEL_URL)
     return True
 
 
-async def _register_frontend(hass: HomeAssistant) -> None:
+async def _register_static(hass: HomeAssistant) -> None:
     folder = Path(__file__).parent / "frontend"
     await hass.http.async_register_static_paths([StaticPathConfig(STATIC_URL, str(folder), False)])
+
+
+async def _register_frontend(hass: HomeAssistant) -> None:
     if PANEL_URL in hass.data.get(frontend.DATA_PANELS, {}):
         return
     await panel_custom.async_register_panel(

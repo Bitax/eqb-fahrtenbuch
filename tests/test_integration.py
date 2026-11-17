@@ -166,3 +166,40 @@ async def test_panel_registered(hass, car, hass_client):
 async def test_no_mercedes(hass):
     r = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert r["type"] == "abort" and r["reason"] == "no_mercedes"
+
+
+async def test_charge_ends_after_unavailable(hass, car):
+    """Ladesensor springt von 'on' über 'unavailable' auf 'off' – die Ladung muss trotzdem gespeichert werden."""
+    with patch("custom_components.eqb_fahrtenbuch._register_frontend"):
+        r = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+        await hass.config_entries.flow.async_configure(r["flow_id"], {"vin": VIN, "battery_capacity": 66.5, "default_price": 0.59})
+        await hass.async_block_till_done()
+    m = next(v for k, v in hass.data[DOMAIN].items() if not k.startswith("_"))
+
+    async def geo(lat, lon):
+        return "Hagen"
+
+    m.place_name = geo
+    hass.states.async_set(ent("sensor", "soc"), "20")
+    hass.states.async_set(ent("binary_sensor", "chargingactive"), "on")
+    await hass.async_block_till_done()
+    hass.states.async_set(ent("sensor", "soc"), "60")
+    hass.states.async_set(ent("binary_sensor", "chargingactive"), "unavailable")
+    await hass.async_block_till_done()
+    hass.states.async_set(ent("binary_sensor", "chargingactive"), "off")
+    await hass.async_block_till_done()
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=400))
+    await hass.async_block_till_done()
+    assert len(m.book.charges) == 1 and not m.book.active_charge
+
+
+async def test_panel_removed_on_unload(hass, car):
+    from homeassistant.components import frontend
+    r = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    await hass.config_entries.flow.async_configure(r["flow_id"], {"vin": VIN, "battery_capacity": 66.5, "default_price": 0.59})
+    await hass.async_block_till_done()
+    assert "fahrtenbuch" in hass.data[frontend.DATA_PANELS]
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert "fahrtenbuch" not in hass.data[frontend.DATA_PANELS]

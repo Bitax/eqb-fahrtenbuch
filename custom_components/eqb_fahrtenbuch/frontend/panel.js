@@ -30,6 +30,8 @@ const TILES = {
 };
 const DEFAULT_TILES = ["kosten", "ersparnis", "verbrauch_monat", "kurzstrecken", "topziele", "laden", "rekorde"];
 
+const LOAD_TIMEOUT = 8000; // ms bis zum neuen Versuch
+
 const nf = (d) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmt = (v, d = 1) => (v === null || v === undefined || isNaN(v) ? "–" : nf(d).format(v));
 const eur = (v) => (v === null || v === undefined || isNaN(v) ? "–" : nf(2).format(v) + " €");
@@ -246,6 +248,11 @@ class EqbFahrtenbuchPanel extends HTMLElement {
       this._init();
       return;
     }
+    // Home Assistant hat eine neue Verbindung aufgebaut
+    if (this.root && this.isConnected && h.connection && h.connection !== this._conn) {
+      this._listen(true);
+      this._refresh();
+    }
     if (this.s.tab === "overview" && !this.s.modal && this.data) {
       const sig = this._stateSig();
       if (sig !== this._lastStates) {
@@ -276,16 +283,15 @@ class EqbFahrtenbuchPanel extends HTMLElement {
       if (e.key === "Escape" && this.s.modal) this._closeModal();
     });
     this._loadLeaflet();
+    this.render(); // sofort „Lädt …“ statt eines schwarzen Bildschirms
+    this._listen(true);
     await this._load();
-    try {
-      this._unsub = await this.hass.connection.subscribeMessage(() => this._load(), { type: `${DOMAIN}/subscribe` });
-    } catch (e) {
-      /* älteres HA: dann eben ohne Live-Aktualisierung */
-    }
+    this._subscribe();
   }
 
   disconnectedCallback() {
     this._wasDisconnected = true;
+    this._listen(false);
     if (this._unsub) {
       this._unsub();
       this._unsub = null;
@@ -293,11 +299,55 @@ class EqbFahrtenbuchPanel extends HTMLElement {
   }
 
   connectedCallback() {
-    if (this._wasDisconnected && this._hass && this.root && !this._unsub) {
+    if (this._wasDisconnected && this._hass && this.root) {
       this._wasDisconnected = false;
-      this._load();
-      this.hass.connection.subscribeMessage(() => this._load(), { type: `${DOMAIN}/subscribe` }).then((u) => (this._unsub = u)).catch(() => {});
+      this._listen(true);
+      this._refresh();
     }
+  }
+
+  // Aufwachen des iPads und neue Verbindung zu Home Assistant beobachten
+  _listen(on) {
+    if (!this._onVisible) {
+      this._onVisible = () => {
+        if (document.visibilityState === "visible" && this.isConnected) this._refresh();
+      };
+      this._onReady = () => {
+        if (this.isConnected) this._refresh();
+      };
+    }
+    if (this._conn) this._conn.removeEventListener?.("ready", this._onReady);
+    document.removeEventListener("visibilitychange", this._onVisible);
+    this._conn = null;
+    if (!on) return;
+    document.addEventListener("visibilitychange", this._onVisible);
+    this._conn = this._hass?.connection || null;
+    this._conn?.addEventListener?.("ready", this._onReady);
+  }
+
+  // Daten neu holen und Live-Aktualisierung sicherstellen
+  _refresh() {
+    this._load();
+    this._subscribe();
+  }
+
+  _subscribe() {
+    if (this._unsub || this._subPending || !this._hass) return;
+    this._subPending = true;
+    // Hängt die Anfrage, nach 10 s einen neuen Versuch zulassen
+    const timer = setTimeout(() => (this._subPending = false), 10000);
+    this.hass.connection
+      .subscribeMessage(() => this._load(), { type: `${DOMAIN}/subscribe` })
+      .then((unsub) => {
+        clearTimeout(timer);
+        this._subPending = false;
+        if (this._unsub || !this.isConnected) unsub();
+        else this._unsub = unsub;
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        this._subPending = false; /* älteres HA: dann eben ohne Live-Aktualisierung */
+      });
   }
 
   _loadLeaflet() {
@@ -309,15 +359,59 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     document.head.appendChild(sc);
   }
 
-  async _load() {
+  async _load(attempt = 0) {
+    const token = (this._loadToken = (this._loadToken || 0) + 1);
+    const TIMEOUT = {};
+    let result;
+    let failure = null;
     try {
-      this.data = await this.hass.callWS({ type: `${DOMAIN}/get` });
-      this.error = null;
+      result = await Promise.race([
+        this.hass.callWS({ type: `${DOMAIN}/get` }),
+        new Promise((_, reject) => setTimeout(() => reject(TIMEOUT), LOAD_TIMEOUT)),
+      ]);
     } catch (e) {
-      this.error = e.message || String(e);
+      failure = e;
     }
-    if (this.s.modal) {
+    if (token !== this._loadToken) return; // inzwischen läuft eine neuere Abfrage
+
+    if (failure === TIMEOUT) {
+      if (attempt === 0) {
+        // Keine Antwort: Die Verbindung hängt vermutlich (z. B. nach dem Ruhezustand).
+        // Neu verbinden (höchstens alle 30 s) und noch einmal fragen.
+        const now = Date.now();
+        if (!this._lastReconnect || now - this._lastReconnect > 30000) {
+          this._lastReconnect = now;
+          try {
+            this.hass.connection.reconnect?.(true);
+          } catch (e) {}
+        }
+        return this._load(1);
+      }
+      // Vorhandene Daten weiter zeigen, sonst Hinweis mit „Erneut versuchen“
+      if (!this.data) this.error = "Home Assistant antwortet gerade nicht.";
+    } else if (failure) {
+      this.error = failure.message || String(failure);
+    } else {
+      this.data = result;
+      this.error = null;
+    }
+    // Nicht neu zeichnen, solange ein Dialog offen ist oder gerade getippt wird (z. B. Notiz einer Fahrt)
+    const typing = this.shadowRoot.activeElement?.matches?.("input, textarea, select");
+    if (this.s.modal || typing) {
       this._dirty = true;
+      if (typing && !this._blurHooked) {
+        this._blurHooked = true;
+        this.shadowRoot.activeElement.addEventListener(
+          "blur",
+          () => {
+            this._blurHooked = false;
+            setTimeout(() => {
+              if (this._dirty && !this.s.modal) this.render();
+            }, 150);
+          },
+          { once: true }
+        );
+      }
       return;
     }
     this.render();
@@ -392,7 +486,8 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     const tabTitle = TABS.find((t) => t[0] === this.s.tab)[1];
     const title = this.s.tab === "months" ? "Monatsübersicht" : tabTitle;
     let body;
-    if (this.error) body = `<div class="empty"><b>Fahrtenbuch nicht erreichbar</b>${esc(this.error)}</div>`;
+    if (this.error && !this.data)
+      body = `<div class="empty"><b>Fahrtenbuch nicht erreichbar</b>${esc(this.error)}<div style="margin-top:18px"><button class="btn pri" data-a="retry"><ha-icon icon="mdi:refresh"></ha-icon>Erneut versuchen</button></div></div>`;
     else if (!this.data) body = `<div class="empty"><b>Lädt …</b></div>`;
     else body = this["_" + this.s.tab]();
 
@@ -1060,6 +1155,11 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     e.stopPropagation();
     const go = () => this.render();
     switch (a) {
+      case "retry":
+        this.error = null;
+        this.render();
+        this._refresh();
+        break;
       case "carview":
         this.s.carView = ((this.s.carView || 0) + 1) % CAR_VIEWS.length;
         go();

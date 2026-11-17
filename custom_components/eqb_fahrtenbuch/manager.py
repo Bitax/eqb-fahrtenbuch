@@ -180,7 +180,8 @@ class FahrtenbuchManager:
                     self.book.start_charge(self.snapshot(), self._charge_kind())
                     self.book.charge_power(self._now(), self._num(KEY_CHARGE_POWER))
                     self._save()
-            elif n == "off" and o == "on" and self.book.active_charge:
+            # Auch "on" -> "unavailable" -> "off" (Verbindungsabbruch, Neustart) beendet die Ladung
+            elif n == "off" and self.book.active_charge and not self._finalize_charge_cancel:
                 self.book.charge_power(self._now(), 0.0)
                 self._schedule_charge_finalize(90)
 

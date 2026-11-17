@@ -35,7 +35,7 @@ Fahrten werden erst **ab der Installation** aufgezeichnet. Ältere Fahrten kann 
 ## Installation (Schritt für Schritt)
 
 ### Voraussetzungen
-- Home Assistant 2024.7 oder neuer
+- Home Assistant 2024.11 oder neuer
 - **HACS** ist installiert
 - Die Integration **MercedesMe2020** ist eingerichtet und zeigt Werte an. Wichtig: Der **Datenmodus „push“** muss aktiv sein, wie im Diagnose-Bereich zu sehen.
 
