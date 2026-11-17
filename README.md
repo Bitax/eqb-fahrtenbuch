@@ -1,12 +1,12 @@
 # EQB Fahrtenbuch für Home Assistant
 
-Ein automatisches Fahrtenbuch für den Mercedes EQB 350. Es nutzt die Werte der **MercedesMe2020**-Integration und zeichnet jede Fahrt und jede Ladung selbst auf. Ein Abo bei Mercedes ist dafür nicht nötig.
+Ein automatisches Fahrtenbuch für den Mercedes EQB 300 4MATIC. Es nutzt die Werte der **MercedesMe2020**-Integration und zeichnet jede Fahrt und jede Ladung selbst auf. Ein Abo bei Mercedes ist dafür nicht nötig.
 
 ![Übersicht](docs/uebersicht.png)
 
 ## Was es kann
 
-- **Fahrten:** Start, Ziel, Kilometer, Dauer, Verbrauch, Kosten, Akkustand, Eco-Score und Außentemperatur. Tippt man eine Fahrt an, erscheinen ihre Statistik und eine Karte mit Start- und Zielpunkt.
+- **Fahrten:** Start, Ziel, Kilometer, Dauer, Verbrauch, Kosten, Akkustand, Eco-Score und Außentemperatur. Tippt man eine Fahrt an, erscheint ihre Statistik.
 - **Monate:** Jeder Monat mit Anzahl der Fahrten, Kilometern, Verbrauch und Kosten.
 - **Laden:** Jede Ladung mit kWh, AC/DC und Ort. Den Preis pro kWh oder den Gesamtbetrag trägt man selbst ein.
 - **Statistik:** Kacheln zum Auswählen: Kosten pro 100 km, Ersparnis gegenüber einem Benziner, Verbrauch je Monat, Verbrauch nach Temperatur, Kurzstrecken, Top-Ziele, Wochentage, Laden, Eco-Score, CO₂ und Rekorde.
@@ -57,7 +57,7 @@ Fahrten werden erst **ab der Installation** aufgezeichnet. Ältere Fahrten kann 
 
 ### Schritt 4 – Fahrtenbuch hinzufügen
 1. **Einstellungen → Geräte & Dienste → Integration hinzufügen** und nach **EQB Fahrtenbuch** suchen.
-2. Fahrzeug auswählen. Die Akkugröße ist mit 66,5 kWh nutzbar voreingestellt, das passt zum EQB 350 4MATIC. Weicht sie laut Datenblatt ab, trag den richtigen Wert ein. Er wird nur gebraucht, wenn der Verbrauch aus dem Akkustand berechnet werden muss.
+2. Fahrzeug auswählen. Die Akkugröße ist mit 66,5 kWh nutzbar voreingestellt, das passt zum EQB 300 4MATIC. Weicht sie laut Datenblatt ab, trag den richtigen Wert ein. Er wird nur gebraucht, wenn der Verbrauch aus dem Akkustand berechnet werden muss.
 3. Der **Standardpreis** gilt nur, bis die erste Ladung einen eingetragenen Preis hat.
 4. In der Seitenleiste erscheint jetzt **Fahrtenbuch**. Falls nicht, die App einmal neu laden.
 
@@ -91,7 +91,7 @@ Den Ordner `custom_components/eqb_fahrtenbuch` aus diesem Repo nach `config/cust
 
 ## Technik
 - Speicherung: Home-Assistant-Speicher (`.storage`), keine externe Datenbank
-- Oberfläche: eigenes Panel ohne Build-Schritt, Karten mit Leaflet und OpenStreetMap/CARTO
+- Oberfläche: eigenes Panel ohne Build-Schritt (Karten mit Leaflet sind vorbereitet, aber vorerst ausgeblendet)
 - PDF: fpdf2. Home Assistant installiert die Bibliothek beim ersten Start automatisch
 - Tests: `pytest tests` (mit `pytest-homeassistant-custom-component`)
 

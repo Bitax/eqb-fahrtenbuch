@@ -284,14 +284,14 @@ class EqbFahrtenbuchPanel extends HTMLElement {
       st.textContent = FONT_FACES(this.base);
       document.head.appendChild(st);
     }
-    this.shadowRoot.innerHTML = `<link rel="stylesheet" href="${this.base}/vendor/leaflet.css"><style>${CSS}</style><div id="root"></div>`;
+    this.shadowRoot.innerHTML = `<style>${CSS}</style><div id="root"></div>`;
     this.root = this.shadowRoot.getElementById("root");
     this.root.addEventListener("click", (e) => this._click(e));
     this.root.addEventListener("change", (e) => this._change(e));
     this.root.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && this.s.modal) this._closeModal();
     });
-    this._loadLeaflet();
+    // Karten vorerst ausgeblendet (Leaflet wird nicht geladen)
     this.render(); // sofort „Lädt …“ statt eines schwarzen Bildschirms
     this._listen(true);
     await this._load();
@@ -503,7 +503,7 @@ class EqbFahrtenbuchPanel extends HTMLElement {
     this.root.innerHTML = `
       <div class="top"><div class="toprow">
         <button class="menu" data-a="menu" aria-label="Menü"><ha-icon icon="mdi:menu"></ha-icon></button>
-        <div class="title"><small>EQB 350 · Fahrtenbuch</small><h1>${title}</h1></div>
+        <div class="title"><small>EQB 300 · Fahrtenbuch</small><h1>${title}</h1></div>
         <nav class="tabs">${TABS.map(([id, name, icon]) => `<button class="tab ${this.s.tab === id ? "on" : ""}" data-a="tab" data-v="${id}"><ha-icon icon="${icon}"></ha-icon>${name}</button>`).join("")}</nav>
         <button class="btn" data-a="pdf" style="margin-left:${this._isNarrow() ? "auto" : "26px"}"><ha-icon icon="mdi:file-download-outline"></ha-icon><span class="pdfl">PDF</span></button>
       </div></div>
@@ -627,7 +627,6 @@ class EqbFahrtenbuchPanel extends HTMLElement {
 
         <div class="card pad">
           <div class="lbl">Standort</div>
-          <div class="map" style="height:150px;margin-top:10px" data-map="car"></div>
           <div class="row" style="margin-top:6px"><span class="muted">Zuletzt geparkt</span><b>${esc(last?.end_name || "–")}</b></div>
         </div>
 
@@ -723,7 +722,6 @@ class EqbFahrtenbuchPanel extends HTMLElement {
         <div class="serif" style="font-size:23px;margin-top:6px;line-height:1.25">${this._routeText(t)}</div></div>
         <button class="btn ibtn" data-a="closetrip" aria-label="Schließen"><ha-icon icon="mdi:close"></ha-icon></button>
       </div>
-      <div class="map" data-map="trip" data-id="${t.id}" style="height:${sheet ? 240 : 200}px"></div>
       <div class="kv">
         <div><span>Strecke</span><b>${fmt(t.km, 1)} km</b></div><div><span>Dauer</span><b>${dur(t.minutes)}</b></div>
         <div><span>Verbrauch</span><b>${fmt(t.kwh, 2)} kWh</b></div><div><span>Pro 100 km</span><b>${fmt(t.cons_100, 1)} kWh</b></div>

@@ -1,7 +1,7 @@
 """Konstanten für das EQB Fahrtenbuch."""
 
 DOMAIN = "eqb_fahrtenbuch"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 
 SOURCE_DOMAIN = "mbapi2020"  # MercedesMe2020-Integration
 
@@ -9,7 +9,7 @@ CONF_VIN = "vin"
 CONF_CAPACITY = "battery_capacity"
 CONF_DEFAULT_PRICE = "default_price"
 
-DEFAULT_CAPACITY = 66.5  # nutzbare Akkukapazität EQB 350 in kWh
+DEFAULT_CAPACITY = 66.5  # nutzbare Akkukapazität EQB 300 4MATIC in kWh
 DEFAULT_PRICE = 0.59  # €/kWh, solange noch keine Ladung mit Preis existiert
 
 STORAGE_VERSION = 1

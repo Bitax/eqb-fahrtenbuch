@@ -108,7 +108,7 @@ def build_pdf(data: dict, start: date, end: date, sections: list[str]) -> bytes:
     pdf.set_xy(15, 9)
     pdf.set_text_color(164, 170, 174)
     pdf.set_font("Sans", "", 8)
-    pdf.cell(0, 4, "MERCEDES-BENZ EQB 350 · FAHRTENBUCH", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 4, "MERCEDES-BENZ EQB 300 · FAHRTENBUCH", new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Sans", "B", 18)
     pdf.cell(0, 10, f"{start.strftime('%d.%m.%Y')} – {end.strftime('%d.%m.%Y')}", new_x="LMARGIN", new_y="NEXT")
